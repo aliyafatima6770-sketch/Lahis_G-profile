@@ -1,371 +1,418 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>TuZhi Gamerz</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
   <style>
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
     :root {
-      --bg1:    #0d0d1a;
       --card:   #18182e;
       --card2:  #1f1f3a;
-      --border: rgba(120,100,255,0.18);
+      --border: rgba(120,100,255,0.15);
       --txt1:   #f0eeff;
       --txt2:   #a09cc0;
       --accent: #7c6ef7;
-      --radius: 20px;
-      --av:     100px;
-      --deco:   160px;
-      --bleed:  30px;
+      --r:      18px;
     }
+
     body {
       font-family: 'Nunito', sans-serif;
-      background: var(--bg1);
+      background: #0d0d1a;
       min-height: 100vh;
       display: flex; justify-content: center; align-items: flex-start;
-      padding: 30px 16px 60px;
+      padding: clamp(12px, 4vw, 30px) clamp(8px, 3vw, 16px) 60px;
       overflow-x: hidden;
     }
+
+    /* ── STARS ── */
     #particles { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
     .star {
-      position:absolute; width:2px; height:2px;
-      background:white; border-radius:50%; opacity:0;
-      animation: twinkle var(--dur,3s) var(--delay,0s) infinite;
+      position:absolute; border-radius:50%; opacity:0;
+      animation: tw var(--d,3s) var(--e,0s) infinite;
     }
-    @keyframes twinkle {
-      0%,100%{ opacity:0; transform:scale(1); }
-      50%    { opacity:var(--bright,.6); transform:scale(1.5); }
+    @keyframes tw {
+      0%,100%{ opacity:0; }
+      50%    { opacity:var(--b,.5); }
     }
+
+    /* ── CARD ── */
     .profile-card {
       position:relative; z-index:1;
-      width:100%; max-width:420px;
-      background:var(--card);
-      border-radius:var(--radius);
-      border:1px solid var(--border);
-      overflow:visible;
-      box-shadow: 0 0 60px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.04);
-      animation: cardIn .7s cubic-bezier(.16,1,.3,1) both;
+      width:100%; max-width:min(420px, 100%);
+      background: var(--card);
+      border-radius: var(--r);
+      border: 1px solid var(--border);
+      overflow: visible;          /* MUST be visible for deco bleed */
+      box-shadow: 0 8px 60px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.04);
+      animation: cardIn .65s cubic-bezier(.16,1,.3,1) both;
     }
     @keyframes cardIn {
-      from { opacity:0; transform:translateY(40px) scale(.97); }
+      from { opacity:0; transform:translateY(36px) scale(.97); }
       to   { opacity:1; transform:translateY(0)    scale(1);   }
     }
+
+    /* ── BANNER ── */
     .banner {
-      width:100%; height:150px;
-      background:linear-gradient(135deg,#ff6b9d,#8e44ad,#5865f2);
-      position:relative; overflow:hidden;
-      border-radius:var(--radius) var(--radius) 0 0;
+      width:100%;
+      height: clamp(110px, 30vw, 155px);
+      background: linear-gradient(135deg,#ff6b9d,#8e44ad,#5865f2);
+      border-radius: var(--r) var(--r) 0 0;
+      overflow: hidden; position:relative;
     }
-    .banner img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .6s; }
+    .banner img {
+      width:100%; height:100%; object-fit:cover; display:block;
+      transition: transform .6s;
+    }
     .banner:hover img { transform:scale(1.05); }
-    .banner-shimmer {
+    .shimmer {
       position:absolute; inset:0;
-      background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.06) 50%,transparent 60%);
-      animation:shimmer 3s infinite;
+      background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.07) 50%,transparent 60%);
+      animation:sh 3.5s infinite;
     }
-    @keyframes shimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }
+    @keyframes sh { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }
 
-    /* AVATAR ROW */
+    /* ─────────────────────────────────────────
+       AVATAR SYSTEM — clean simple approach
+
+       .av-wrap = exactly 100×100px (avatar size)
+       deco imgs = 160×160, placed top:-30 left:-30
+                   so they naturally bleed 30px outside
+       z-order:
+         deco-bot   z:1  (behind avatar)
+         .av-wrap   z:2  (avatar circle)
+         deco-top   z:3  (front, center masked)
+         status-dot z:4  (always on top)
+    ───────────────────────────────────────── */
     .avatar-row {
-      position:relative; padding:0 20px;
-      margin-top:-52px;
-      display:flex; align-items:flex-end; gap:14px;
+      padding: 0 clamp(14px,4vw,20px);
+      margin-top: clamp(-40px,-10vw,-48px);
+      display: flex; align-items: flex-end;
+      gap: clamp(10px,3vw,14px);
     }
 
-    /*
-      .avatar-outer — creates overflow space for decoration (padding = bleed amount)
-      Inside it:
-        deco-frame-bot  z:1  (behind avatar)
-        .avatar-inner         (100px box, no z-index so it doesn't create stacking ctx)
-          .avatar             (circle image)
-        deco-frame-top  z:3  (masked, ring on top)
-        .status-dot     z:4  (always visible on top of everything)
-    */
-    .avatar-outer {
-      position:relative;
-      flex-shrink:0;
-      width:calc(var(--av) + 2*var(--bleed));
-      height:calc(var(--av) + 2*var(--bleed));
-      margin-bottom:10px;
+    /* wrapper = avatar size exactly, overflow:visible so deco bleeds */
+    .av-wrap {
+      position: relative;
+      width: 100px; height: 100px;
+      flex-shrink: 0;
+      z-index: 2;           /* sits above deco-bot */
+      overflow: visible;
+      margin-bottom: 10px;
     }
 
-    .avatar-inner {
-      position:absolute;
-      top:var(--bleed); left:var(--bleed);
-      width:var(--av); height:var(--av);
-      z-index:2; /* above deco-frame-bot(1), below deco-frame-top(3) */
+    /* the actual circle */
+    .av-circle {
+      width: 100%; height: 100%;
+      border-radius: 50%;
+      border: 4px solid var(--card);
+      background: var(--card2);
+      overflow: hidden;
+      box-shadow: 0 0 24px rgba(0,0,0,.6), 0 0 0 2.5px var(--accent);
+      animation: pop .8s .2s cubic-bezier(.16,1,.3,1) both;
     }
-
-    .avatar {
-      width:100%; height:100%;
-      border-radius:50%;
-      border:4px solid var(--card);
-      background:var(--card2);
-      overflow:hidden;
-      box-shadow:0 0 20px rgba(0,0,0,.5), 0 0 0 2px var(--accent);
-      animation:avatarPop .8s .2s cubic-bezier(.16,1,.3,1) both;
-    }
-    @keyframes avatarPop {
-      from { opacity:0; transform:scale(.6); }
+    @keyframes pop {
+      from { opacity:0; transform:scale(.55); }
       to   { opacity:1; transform:scale(1); }
     }
-    .avatar img { width:100%; height:100%; object-fit:cover; display:block; }
+    .av-circle img { width:100%; height:100%; object-fit:cover; display:block; }
 
-    /* DECORATION */
-    .deco-img {
-      position:absolute;
-      width:var(--deco); height:var(--deco);
-      top:0; left:0;
-      pointer-events:none;
-      object-fit:contain;
-      animation:avatarPop .8s .25s cubic-bezier(.16,1,.3,1) both;
+    /* ── DECORATION IMAGES ── */
+    /*
+      Both deco-bot and deco-top are 160×160.
+      top:-30px; left:-30px centres them on the 100px av-wrap.
+      deco-bot  z:1  → behind av-wrap (z:2) — shows behind avatar face
+      deco-top  z:3  → above  av-wrap (z:2) — mask punches hole at centre
+                        so avatar face shows through, outer ring visible
+    */
+    .deco {
+      position: absolute;
+      width: 160px; height: 160px;
+      top: -30px; left: -30px;          /* centre 160px over 100px: (160-100)/2 = 30 */
+      pointer-events: none;
+      object-fit: contain;
+      animation: pop .8s .28s cubic-bezier(.16,1,.3,1) both;
     }
-    .deco-over      { z-index:3; }
-    .deco-under     { z-index:1; }
-    .deco-frame-bot { z-index:1; }
-    .deco-frame-top {
-      z-index:3;
-      -webkit-mask: radial-gradient(circle 46px at 80px 80px, transparent 45px, black 46px);
-              mask: radial-gradient(circle 46px at 80px 80px, transparent 45px, black 46px);
+    /* behind avatar */
+    .deco-bot { z-index: -1; }          /* negative so it goes behind av-wrap z:2 */
+
+    /* in front: mask punches 50px hole at image-centre (80px,80px)
+       80px into the 160px image = avatar centre                    */
+    .deco-top {
+      z-index: 3;
+      -webkit-mask: radial-gradient(circle 50px at 80px 80px, transparent 49px, black 50px);
+              mask: radial-gradient(circle 50px at 80px 80px, transparent 49px, black 50px);
     }
 
-    /* STATUS DOT — anchored to avatar bottom-right corner */
+    /* ── STATUS DOT — Discord accurate ── */
     .status-dot {
-      position:absolute;
-      /* avatar bottom-right = bleed+av = 30+100=130px from outer top-left */
-      /* dot is 22px, center it on corner: 130 - 11 = 119 ... but Discord puts it ~6px inside */
-      /* so: right from outer-right = outer_width - (bleed+av) + 6 = 160-130+6=36 but from left = 130-6-11=113 */
-      /* Simpler: left = bleed+av-dot_half-inset = 30+100-11-8 = 111, top = same */
-      left: 111px;
-      top:  111px;
-      z-index:4;
-      width:22px; height:22px;
-      border-radius:50%;
-      background:var(--card);
-      border:3px solid var(--card);
-      display:flex; align-items:center; justify-content:center;
+      position: absolute;
+      bottom: -4px; right: -4px;
+      z-index: 4;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: var(--card);
+      border: 3px solid var(--card);
+      display: flex; align-items: center; justify-content: center;
     }
     .status-dot svg { display:block; }
 
-    /* pulse ring (no deco) */
-    .no-deco .avatar-outer::before {
+    /* pulse ring (only without deco) */
+    .no-deco .av-wrap::after {
       content:'';
-      position:absolute;
-      width:calc(var(--av) + 8px);
-      height:calc(var(--av) + 8px);
-      top:calc(var(--bleed) - 4px);
-      left:calc(var(--bleed) - 4px);
+      position:absolute; inset:-6px;
       border-radius:50%;
       border:2px solid var(--accent);
       opacity:0;
-      animation:pulseRing 2.5s ease-out infinite;
+      animation:pulse 2.5s ease-out infinite;
       pointer-events:none;
     }
-    @keyframes pulseRing {
-      0%   { opacity:.6; transform:scale(.95); }
-      100% { opacity:0;  transform:scale(1.2); }
+    @keyframes pulse {
+      0%   { opacity:.55; transform:scale(.94); }
+      100% { opacity:0;   transform:scale(1.18); }
     }
 
-    /* STATUS BUBBLE */
+    /* ── STATUS BUBBLE ── */
     .status-bubble {
-      flex:1; background:var(--card2);
-      border:1px solid var(--border); border-radius:14px;
-      padding:10px 14px; margin-bottom:10px;
-      font-size:13px; color:var(--txt2);
-      line-height:1.4; word-break:break-word;
-      animation:fadeSlide .7s .35s both;
-      /* align to avatar circle center */
-      align-self:center;
+      flex: 1; min-width: 0;
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: clamp(8px,2vw,11px) clamp(10px,3vw,14px);
+      margin-bottom: 10px;
+      font-size: clamp(11px,3vw,13px);
+      color: var(--txt2);
+      line-height: 1.45; word-break: break-word;
+      align-self: center;
+      animation: sldIn .65s .3s both;
     }
-    @keyframes fadeSlide {
-      from { opacity:0; transform:translateX(16px); }
+    @keyframes sldIn {
+      from { opacity:0; transform:translateX(14px); }
       to   { opacity:1; transform:translateX(0); }
     }
 
-    .profile-body { padding:18px 20px 24px; }
+    /* ── PROFILE BODY ── */
+    .profile-body {
+      padding: clamp(14px,4vw,18px) clamp(14px,4vw,20px) clamp(18px,5vw,24px);
+    }
 
     .display-name {
-      font-size:26px; font-weight:900; color:var(--txt1);
-      letter-spacing:-.5px; animation:fadeUp .5s .4s both;
+      font-size: clamp(20px,6vw,26px);
+      font-weight: 900; color: var(--txt1);
+      letter-spacing: -.4px;
+      animation: up .45s .38s both;
     }
     .meta-row {
-      display:flex; align-items:center; gap:8px; flex-wrap:wrap;
-      margin:4px 0 16px; font-size:14px; color:var(--txt2);
-      animation:fadeUp .5s .5s both;
+      display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+      margin: 4px 0 14px;
+      font-size: clamp(12px,3.5vw,14px); color: var(--txt2);
+      animation: up .45s .45s both;
     }
-    .meta-sep { opacity:.4; }
-    @keyframes fadeUp {
-      from { opacity:0; transform:translateY(12px); }
+    .meta-sep { opacity:.35; }
+
+    @keyframes up {
+      from { opacity:0; transform:translateY(10px); }
       to   { opacity:1; transform:translateY(0); }
     }
 
+    /* ── ABOUT ── */
     .about-box {
-      background:var(--card2); border:1px solid var(--border);
-      border-radius:14px; padding:14px 16px; margin-bottom:20px;
-      animation:fadeUp .5s .55s both;
+      background: var(--card2); border:1px solid var(--border);
+      border-radius: 12px;
+      padding: clamp(10px,3vw,14px) clamp(12px,3.5vw,16px);
+      margin-bottom: 16px;
+      animation: up .45s .52s both;
     }
     .about-label {
-      font-size:11px; font-weight:800; color:var(--txt2);
-      text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;
+      font-size: 10px; font-weight:800; color:var(--txt2);
+      text-transform:uppercase; letter-spacing:1.1px; margin-bottom:7px;
     }
-    .about-text { font-size:14px; color:var(--txt1); line-height:1.6; white-space:pre-wrap; }
+    .about-text {
+      font-size: clamp(12px,3.5vw,14px); color:var(--txt1);
+      line-height:1.6; white-space:pre-wrap;
+    }
 
+    /* ── BADGES ── */
     .badges-wrap {
-      display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px;
-      animation:fadeUp .5s .6s both;
+      display: flex; flex-wrap:wrap;
+      gap: clamp(5px,1.5vw,8px);
+      margin-bottom: 16px;
+      animation: up .45s .58s both;
     }
     .badge-item {
-      width:36px; height:36px; border-radius:10px;
+      width: clamp(30px,8vw,36px); height:clamp(30px,8vw,36px);
+      border-radius: 9px;
       background:var(--card2); border:1px solid var(--border);
       overflow:hidden; cursor:pointer;
-      transition:transform .2s, box-shadow .2s;
-      display:flex; align-items:center; justify-content:center; padding:4px;
+      transition: transform .18s, box-shadow .18s;
+      display:flex; align-items:center; justify-content:center; padding:3px;
     }
     .badge-item img { width:100%; height:100%; object-fit:contain; display:block; }
     .badge-item:hover {
-      transform:translateY(-4px) scale(1.12);
-      box-shadow:0 8px 20px rgba(0,0,0,.4), 0 0 0 2px var(--accent);
+      transform:translateY(-4px) scale(1.1);
+      box-shadow:0 8px 18px rgba(0,0,0,.4), 0 0 0 2px var(--accent);
     }
 
+    /* ── BADGE TOOLTIP ── */
     .badge-tooltip {
-      position:fixed; top:18px; left:50%;
-      transform:translateX(-50%) translateY(-80px);
+      position:fixed; top:16px; left:50%;
+      transform:translateX(-50%) translateY(-70px);
       background:var(--card2); border:1px solid var(--border);
-      border-radius:14px; padding:12px 20px;
-      display:flex; align-items:center; gap:12px;
-      box-shadow:0 12px 40px rgba(0,0,0,.5);
+      border-radius:13px; padding:11px 18px;
+      display:flex; align-items:center; gap:10px;
+      box-shadow:0 10px 36px rgba(0,0,0,.55);
       z-index:9999; opacity:0;
-      transition:all .35s cubic-bezier(.16,1,.3,1); pointer-events:none;
+      transition:all .3s cubic-bezier(.16,1,.3,1); pointer-events:none;
+      max-width: calc(100vw - 32px);
     }
     .badge-tooltip.show { opacity:1; transform:translateX(-50%) translateY(0); }
-    .badge-tooltip-img  { width:36px; height:36px; object-fit:contain; flex-shrink:0; }
-    .badge-tooltip-name { font-size:15px; font-weight:700; color:var(--txt1); }
+    .badge-tooltip img  { width:32px; height:32px; object-fit:contain; flex-shrink:0; }
+    .badge-tooltip span { font-size:14px; font-weight:700; color:var(--txt1); white-space:nowrap; }
 
+    /* ── BUTTONS ── */
     .buttons-wrap {
-      display:flex; flex-direction:column; gap:10px; margin-bottom:20px;
-      animation:fadeUp .5s .65s both;
+      display:flex; flex-direction:column;
+      gap: clamp(8px,2vw,10px);
+      margin-bottom: 16px;
+      animation: up .45s .64s both;
     }
     .profile-btn {
-      display:flex; align-items:center; justify-content:center; gap:10px;
-      padding:13px 20px; border-radius:50px;
-      font-size:14px; font-weight:800; color:white;
+      display:flex; align-items:center; justify-content:center; gap:9px;
+      padding: clamp(11px,3vw,13px) 18px;
+      border-radius:50px;
+      font-size: clamp(13px,3.8vw,15px); font-weight:800; color:white;
       text-decoration:none; border:none; cursor:pointer;
-      transition:transform .25s, filter .25s;
+      transition:transform .22s, filter .22s;
       position:relative; overflow:hidden;
     }
     .profile-btn::after {
       content:''; position:absolute; inset:0;
-      background:linear-gradient(180deg,rgba(255,255,255,.12) 0%,transparent 60%);
+      background:linear-gradient(180deg,rgba(255,255,255,.13) 0%,transparent 55%);
       pointer-events:none;
     }
-    .profile-btn:hover { transform:translateY(-3px); filter:brightness(1.1); }
+    .profile-btn:hover  { transform:translateY(-3px); filter:brightness(1.12); }
     .profile-btn:active { transform:translateY(0) scale(.97); }
-    .profile-btn i { font-size:16px; }
+    .profile-btn i { font-size:clamp(14px,4vw,16px); }
 
+    /* ── FOOTER ── */
     .profile-footer {
-      border-top:1px solid var(--border);
-      padding:14px 20px; text-align:center;
-      font-size:12px; color:var(--txt2);
-      border-radius:0 0 var(--radius) var(--radius);
-      animation:fadeUp .5s .7s both;
+      border-top: 1px solid var(--border);
+      padding: clamp(10px,3vw,14px) 20px;
+      text-align:center;
+      font-size: clamp(10px,3vw,12px); color:var(--txt2);
+      border-radius: 0 0 var(--r) var(--r);
+      animation: up .45s .7s both;
     }
 
-    .skeleton {
+    /* ── SKELETON ── */
+    .sk {
       background:linear-gradient(90deg,var(--card2) 25%,rgba(255,255,255,.04) 50%,var(--card2) 75%);
-      background-size:200% 100%; animation:skel 1.2s infinite; border-radius:8px;
+      background-size:200% 100%; animation:sk 1.3s infinite; border-radius:8px;
     }
-    @keyframes skel { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-    @media (max-width:480px) { .profile-card { max-width:100%; } }
+    @keyframes sk { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
   </style>
 </head>
 <body>
 
 <div id="particles"></div>
 
-<div class="badge-tooltip" id="badgeTooltip">
-  <img id="ttImg" src="" alt="" class="badge-tooltip-img" />
-  <span class="badge-tooltip-name" id="ttName"></span>
+<!-- Badge tooltip -->
+<div class="badge-tooltip" id="tt">
+  <img id="ttImg" src="" alt=""/>
+  <span id="ttName"></span>
 </div>
 
+<!-- Card skeleton while loading -->
 <div class="profile-card" id="card">
-  <div class="banner"><div class="skeleton" style="width:100%;height:150px;border-radius:0;"></div></div>
-  <div style="padding:0 20px;margin-top:-52px;display:flex;align-items:flex-end;gap:14px;">
-    <div class="skeleton" style="width:100px;height:100px;border-radius:50%;flex-shrink:0;"></div>
-    <div class="skeleton" style="flex:1;height:54px;border-radius:14px;margin-bottom:10px;"></div>
+  <div class="banner"><div class="sk" style="width:100%;height:140px;border-radius:0;"></div></div>
+  <div style="padding:0 18px;margin-top:-46px;display:flex;align-items:flex-end;gap:12px;">
+    <div class="sk" style="width:100px;height:100px;border-radius:50%;flex-shrink:0;"></div>
+    <div class="sk" style="flex:1;height:50px;border-radius:12px;margin-bottom:10px;"></div>
   </div>
-  <div style="padding:18px 20px 24px;">
-    <div class="skeleton" style="width:60%;height:30px;margin-bottom:10px;"></div>
-    <div class="skeleton" style="width:40%;height:16px;margin-bottom:20px;"></div>
-    <div style="display:flex;gap:8px;margin-bottom:20px;">
-      <div class="skeleton" style="width:36px;height:36px;border-radius:10px;"></div>
-      <div class="skeleton" style="width:36px;height:36px;border-radius:10px;"></div>
+  <div style="padding:16px 18px 22px;">
+    <div class="sk" style="width:55%;height:28px;margin-bottom:9px;"></div>
+    <div class="sk" style="width:38%;height:14px;margin-bottom:18px;"></div>
+    <div style="display:flex;gap:7px;margin-bottom:16px;">
+      <div class="sk" style="width:34px;height:34px;border-radius:9px;"></div>
+      <div class="sk" style="width:34px;height:34px;border-radius:9px;"></div>
+      <div class="sk" style="width:34px;height:34px;border-radius:9px;"></div>
     </div>
-    <div class="skeleton" style="height:44px;border-radius:50px;margin-bottom:10px;"></div>
-    <div class="skeleton" style="height:44px;border-radius:50px;margin-bottom:10px;"></div>
+    <div class="sk" style="height:44px;border-radius:50px;margin-bottom:9px;"></div>
+    <div class="sk" style="height:44px;border-radius:50px;margin-bottom:9px;"></div>
   </div>
 </div>
 
 <script>
+/* ── STARS ── */
 (function(){
   const c=document.getElementById('particles');
-  for(let i=0;i<120;i++){
+  for(let i=0;i<110;i++){
     const s=document.createElement('div');
     s.className='star';
-    s.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;--dur:${2+Math.random()*4}s;--delay:${Math.random()*5}s;--bright:${.3+Math.random()*.7};width:${Math.random()<.3?3:2}px;height:${Math.random()<.3?3:2}px;`;
+    const sz=Math.random()<.25?3:2;
+    s.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;width:${sz}px;height:${sz}px;--d:${2+Math.random()*4}s;--e:${Math.random()*6}s;--b:${.25+Math.random()*.65};`;
     c.appendChild(s);
   }
 })();
 
-function buildStatusDot(type) {
-  const t=(type||'offline').toLowerCase();
+/* ── STATUS SVG — exact Discord style ── */
+function statusSVG(type){
   const BG='#18182e';
-  const icons={
+  const m={
     online:   `<circle cx="8" cy="8" r="8" fill="#3ba55d"/>`,
-    dnd:      `<circle cx="8" cy="8" r="8" fill="#ed4245"/><rect x="3" y="6.4" width="10" height="3.2" rx="1.6" fill="white"/>`,
+    dnd:      `<circle cx="8" cy="8" r="8" fill="#ed4245"/><rect x="3" y="6.4" width="10" height="3.2" rx="1.6" fill="#fff"/>`,
     idle:     `<circle cx="8" cy="8" r="8" fill="#faa61a"/><circle cx="5" cy="4.5" r="7" fill="${BG}"/>`,
     offline:  `<circle cx="8" cy="8" r="8" fill="#747f8d"/><circle cx="8" cy="8" r="3.5" fill="${BG}"/>`,
-    streaming:`<circle cx="8" cy="8" r="8" fill="#593695"/><polygon points="5.5,4.5 5.5,11.5 12,8" fill="white"/>`,
+    streaming:`<circle cx="8" cy="8" r="8" fill="#593695"/><polygon points="5.5,4.5 5.5,11.5 12,8" fill="#fff"/>`,
   };
-  return `<div class="status-dot"><svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">${icons[t]||icons.offline}</svg></div>`;
+  return `<div class="status-dot"><svg width="16" height="16" viewBox="0 0 16 16">${m[type]||m.offline}</svg></div>`;
 }
 
-function buildDeco(deco){
-  const none={under:'',over:'',active:false};
-  if(!deco||!deco.file) return none;
-  const src='deco/'+deco.file;
-  const layer=(deco.layer||'frame').toLowerCase();
-  const img=cls=>`<img class="deco-img ${cls}" src="${src}" alt="" onerror="this.style.display='none'"/>`;
-  if(layer==='frame') return {under:img('deco-frame-bot'),over:img('deco-frame-top'),active:true};
-  if(layer==='under') return {under:img('deco-under'),over:'',active:true};
-  return {under:'',over:img('deco-over'),active:true};
+/* ── DECORATION BUILDER ── */
+/*
+  .av-wrap is 100×100px. Deco images are 160×160 at top:-30 left:-30.
+  This centres them perfectly over the 100px avatar.
+
+  "frame" mode = two copies:
+    .deco-bot  z-index:-1  → behind av-wrap (which has z-index:2)
+    .deco-top  z-index:3   → in front, CSS mask punches 50px hole at image
+                             centre (80px,80px) so avatar face shows through
+*/
+function buildDeco(d){
+  if(!d||!d.file) return {bot:'',top:'',active:false};
+  const src='deco/'+d.file;
+  const lyr=(d.layer||'frame').toLowerCase();
+  const el=(cls)=>`<img class="deco ${cls}" src="${src}" alt="" onerror="this.style.display='none'"/>`;
+  if(lyr==='frame') return {bot:el('deco-bot'), top:el('deco-top'), active:true};
+  if(lyr==='under') return {bot:el('deco-bot'), top:'', active:true};
+  return {bot:'', top:el('deco-top'), active:true};
 }
 
-function renderCard(p){
+/* ── RENDER ── */
+function render(p){
   const card=document.getElementById('card');
-  const sType=(p.status?.type||'dnd').toLowerCase();
+  const st=(p.status?.type||'dnd').toLowerCase();
   const deco=buildDeco(p.decoration);
 
   card.innerHTML=`
     <div class="banner">
-      <img src="${p.banner}" alt="Banner" onerror="this.style.display='none'"/>
-      <div class="banner-shimmer"></div>
+      <img src="${p.banner}" alt="" onerror="this.style.display='none'"/>
+      <div class="shimmer"></div>
     </div>
 
     <div class="avatar-row">
       <div class="${deco.active?'':'no-deco'}">
-        <div class="avatar-outer">
-          ${deco.under}
-          <div class="avatar-inner">
-            <div class="avatar">
-              <img src="${p.avatar}" alt="Avatar" onerror="this.style.display='none'"/>
-            </div>
+        ${deco.bot}
+        <div class="av-wrap">
+          <div class="av-circle">
+            <img src="${p.avatar}" alt="" onerror="this.style.display='none'"/>
           </div>
-          ${deco.over}
-          ${buildStatusDot(sType)}
+          ${deco.top}
+          ${statusSVG(st)}
         </div>
       </div>
       <div class="status-bubble">${p.status?.text||''}</div>
@@ -381,15 +428,15 @@ function renderCard(p){
 
       <div class="about-box">
         <div class="about-label">About Me</div>
-        <div class="about-text">${escHTML(p.about||'')}</div>
+        <div class="about-text">${xH(p.about||'')}</div>
       </div>
 
       ${p.badges?.length?`
       <div class="badges-wrap">
         ${p.badges.map((b,i)=>`
-          <div class="badge-item" style="animation:fadeUp .4s ${.6+i*.06}s both;"
-               onclick="showTooltip('${escQ(b.name)}','${escQ(b.image)}','${escQ(b.color||'#7c6ef7')}')">
-            <img src="${b.image}" alt="${escQ(b.name)}" onerror="this.style.opacity='.3'"/>
+          <div class="badge-item" style="animation:up .38s ${.58+i*.055}s both;"
+               onclick="tip('${xQ(b.name)}','${xQ(b.image)}','${xQ(b.color||'#7c6ef7')}')">
+            <img src="${b.image}" alt="${xQ(b.name)}" onerror="this.style.opacity='.25'"/>
           </div>`).join('')}
       </div>`:''}
 
@@ -398,39 +445,42 @@ function renderCard(p){
         ${p.buttons.map((b,i)=>`
           <a href="${b.link}" target="_blank" rel="noopener" class="profile-btn"
              style="background:linear-gradient(135deg,${b.gradient?.[0]||'#7c6ef7'},${b.gradient?.[1]||'#5865f2'});
-                    box-shadow:0 6px 20px ${b.glow||'rgba(124,110,247,.3)'};
-                    animation:fadeUp .4s ${.7+i*.07}s both;">
-            <i class="${b.icon||'fas fa-link'}"></i>
-            ${escHTML(b.name)}
+                    box-shadow:0 5px 18px ${b.glow||'rgba(124,110,247,.3)'};
+                    animation:up .38s ${.64+i*.07}s both;">
+            <i class="${b.icon||'fas fa-link'}"></i>${xH(b.name)}
           </a>`).join('')}
       </div>`:''}
     </div>
 
-    ${p.footer?`<div class="profile-footer">${escHTML(p.footer)}</div>`:''}
+    ${p.footer?`<div class="profile-footer">${xH(p.footer)}</div>`:''}
   `;
 }
 
-let ttTimer=null;
-function showTooltip(name,img,color){
-  const tt=document.getElementById('badgeTooltip');
+/* ── TOOLTIP ── */
+let tTimer;
+function tip(name,img,color){
+  const t=document.getElementById('tt');
   document.getElementById('ttImg').src=img;
   document.getElementById('ttName').textContent=name;
-  tt.style.borderColor=color+'55';
-  tt.classList.add('show');
-  clearTimeout(ttTimer);
-  ttTimer=setTimeout(()=>tt.classList.remove('show'),3000);
+  t.style.borderColor=color+'44';
+  t.classList.add('show');
+  clearTimeout(tTimer);
+  tTimer=setTimeout(()=>t.classList.remove('show'),3000);
 }
 
-function escQ(s){return String(s||'').replace(/'/g,"&#39;").replace(/"/g,"&quot;");}
-function escHTML(s){return String(s||'').replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+/* ── UTILS ── */
+function xQ(s){return String(s||'').replace(/'/g,"&#39;").replace(/"/g,"&quot;");}
+function xH(s){return String(s||'').replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 
+/* ── LOAD ── */
 fetch('./data.json')
   .then(r=>{if(!r.ok)throw r.status;return r.json();})
-  .then(d=>renderCard(d.profile))
+  .then(d=>render(d.profile))
   .catch(e=>{
-    console.error('data.json error',e);
-    renderCard({name:"Profile",username:"username",nickname:"Nickname",avatar:"",banner:"",
-      status:{text:"Status here",type:"online"},badges:[],buttons:[],about:"data.json not found.",footer:""});
+    console.error('data.json:',e);
+    render({name:"TuZhi",username:"tuzhicodes",nickname:"TuZhi Codes",
+      avatar:"",banner:"",status:{text:"Status",type:"dnd"},
+      badges:[],buttons:[],about:"data.json load error.",footer:""});
   });
 </script>
 </body>
