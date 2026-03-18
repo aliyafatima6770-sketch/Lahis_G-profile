@@ -65,8 +65,8 @@
         "name": "GitHub",
         "link": "https://github.com/tuzhicodes",
         "icon": "fab fa-github",
-        "gradient": ["#5865f2", "#4752c4"], 
-        "glow": "rgb(0, 133, 255)"
+        "gradient": ["#5865f2", "#4752c4"],
+        "glow": "rgba(88,101,242,0.35)"
       },
       {
         "name": "YouTube",
